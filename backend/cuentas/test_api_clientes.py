@@ -126,6 +126,16 @@ class ApiClientesTests(APITestCase):
         perfil = self.client.get(reverse("cuentas:perfil"))
         self.assertEqual(perfil.status_code, 200)
         self.assertEqual(perfil.data["id"], self.usuario.pk)
+        self.assertFalse(perfil.data["es_administrador"])
+
+    def test_perfil_identifica_superusuario_aunque_tenga_rol_cliente(self):
+        tecnico = get_user_model().objects.create_superuser(
+            username="tecnico_api", email="tecnico_api@example.com", password="ClaveSegura123!",
+        )
+        self.client.force_authenticate(tecnico)
+        respuesta = self.client.get(reverse("cuentas:perfil"))
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertTrue(respuesta.data["es_administrador"])
 
     def test_cors_permite_frontend_local_y_rechaza_otro_origen(self):
         respuesta = self.client.options(reverse("token_obtain_pair"),

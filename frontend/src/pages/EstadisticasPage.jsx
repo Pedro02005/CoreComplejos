@@ -5,6 +5,7 @@ import { Carga, EmptyState, PageHeader, StatCard } from '../components/UI';
 import { DEPORTES, FRANJAS, MOTIVOS, dinero } from '../utils';
 
 export default function EstadisticasPage() {
+  // Django calcula las estadísticas; React solo cambia el período y dibuja los resultados.
   const [dias, setDias] = useState('90');
   const carga = useCarga(() => estadisticasApi(dias), [dias]);
   const historial = carga.datos?.historial;
@@ -12,5 +13,142 @@ export default function EstadisticasPage() {
   const experiencias = carga.datos?.encuestas.experiencias;
   const maximo = Math.max(1, ...(cancelaciones?.motivos.map((item) => item.cantidad) || []));
 
-  return <><PageHeader titulo="Tu actividad, en números" descripcion="Conoce tus preferencias y el resumen de tus encuentros."><label className="inline-label">Período<select value={dias} onChange={(e) => setDias(e.target.value)}>{[30, 90, 180, 365].map((valor) => <option key={valor} value={valor}>Últimos {valor} días</option>)}</select></label></PageHeader><Carga estado={carga}>{historial && <><div className="stats-grid"><StatCard titulo="Encuentros finalizados" valor={historial.reservas_finalizadas} icono="court" /><StatCard titulo="Cancelaciones realizadas" valor={historial.cancelaciones_recientes} icono="calendar" /><StatCard titulo="Tu calificación promedio" valor={experiencias.calificacion_promedio === null ? 'Sin datos' : `${experiencias.calificacion_promedio} / 5`} detalle={`${experiencias.cantidad_respuestas} encuestas de experiencia`} icono="survey" /><StatCard titulo="Precio por hora de referencia" valor={historial.precio_hora_referencia === null ? 'Sin datos' : dinero(historial.precio_hora_referencia)} detalle="Según encuentros finalizados" icono="chart" /></div><section className="panel"><div className="section-heading"><h2>Tus preferencias</h2><span className="badge badge-green">Últimos {dias} días</span></div><div className="preferences-grid"><div><span>Deporte favorito</span><strong>{DEPORTES[historial.deporte_favorito?.codigo] || 'Por descubrir'}</strong></div><div><span>Complejo favorito</span><strong>{historial.complejo_favorito?.nombre || 'Por descubrir'}</strong></div><div><span>Horario preferido</span><strong>{FRANJAS[historial.franja_preferida?.codigo] || 'Por descubrir'}</strong></div></div>{!historial.muestra_suficiente && <p className="small-text">Con más encuentros finalizados, tus preferencias tendrán una base más amplia.</p>}</section><div className="two-columns"><section className="panel"><h2>Motivos de cancelación</h2><p className="muted">Según tus {cancelaciones.cantidad_respuestas} encuestas de cancelación respondidas.</p>{cancelaciones.motivos.length ? <div className="bar-chart">{cancelaciones.motivos.map((item) => <div className="bar-item" key={item.motivo_cancelacion}><div className="row between"><span>{MOTIVOS[item.motivo_cancelacion] || item.motivo_cancelacion}</span><strong>{item.cantidad}</strong></div><div className="bar-track"><span style={{ width: `${item.cantidad / maximo * 100}%` }} /></div></div>)}</div> : <EmptyState titulo="Todavía no hay respuestas" descripcion="Cuando respondas una encuesta de cancelación, verás aquí sus motivos." icono="survey" />}</section><section className="panel"><h2>Tus experiencias</h2><p className="muted">Lo que nos has contado después de jugar.</p><dl className="detail-list"><div><dt>Encuestas respondidas</dt><dd>{experiencias.cantidad_respuestas}</dd></div><div><dt>Volverías a reservar</dt><dd>{experiencias.volveria_reservar_si} respuestas afirmativas</dd></div><div><dt>Última calificación</dt><dd>{experiencias.ultima_respuesta ? `${experiencias.ultima_respuesta.calificacion} / 5` : 'Sin respuestas'}</dd></div></dl><p className="small-text">Estas cifras son personales y corresponden al período seleccionado. Las cancelaciones realizadas y las encuestas respondidas son conteos diferentes.</p></section></div></>}</Carga></>;
+  return (
+    <>
+      <PageHeader
+        titulo="Tu actividad, en números"
+        descripcion="Conoce tus preferencias y el resumen de tus encuentros."
+      >
+        <label className="inline-label">
+          Período
+          <select value={dias} onChange={(e) => setDias(e.target.value)}>
+            {[30, 90, 180, 365].map((valor) => (
+              <option key={valor} value={valor}>
+                Últimos {valor} días
+              </option>
+            ))}
+          </select>
+        </label>
+      </PageHeader>
+      <Carga estado={carga}>
+        {historial && (
+          <>
+            <div className="stats-grid">
+              <StatCard
+                titulo="Encuentros finalizados"
+                valor={historial.reservas_finalizadas}
+                icono="court"
+              />
+              <StatCard
+                titulo="Cancelaciones realizadas"
+                valor={historial.cancelaciones_recientes}
+                icono="calendar"
+              />
+              <StatCard
+                titulo="Tu calificación promedio"
+                valor={
+                  experiencias.calificacion_promedio === null
+                    ? 'Sin datos'
+                    : `${experiencias.calificacion_promedio} / 5`
+                }
+                detalle={`${experiencias.cantidad_respuestas} encuestas de experiencia`}
+                icono="survey"
+              />
+              <StatCard
+                titulo="Precio por hora de referencia"
+                valor={
+                  historial.precio_hora_referencia === null
+                    ? 'Sin datos'
+                    : dinero(historial.precio_hora_referencia)
+                }
+                detalle="Según encuentros finalizados"
+                icono="chart"
+              />
+            </div>
+            <section className="panel">
+              <div className="section-heading">
+                <h2>Tus preferencias</h2>
+                <span className="badge badge-green">Últimos {dias} días</span>
+              </div>
+              <div className="preferences-grid">
+                <div>
+                  <span>Deporte favorito</span>
+                  <strong>{DEPORTES[historial.deporte_favorito?.codigo] || 'Por descubrir'}</strong>
+                </div>
+                <div>
+                  <span>Complejo favorito</span>
+                  <strong>{historial.complejo_favorito?.nombre || 'Por descubrir'}</strong>
+                </div>
+                <div>
+                  <span>Horario preferido</span>
+                  <strong>{FRANJAS[historial.franja_preferida?.codigo] || 'Por descubrir'}</strong>
+                </div>
+              </div>
+              {!historial.muestra_suficiente && (
+                <p className="small-text">
+                  Con más encuentros finalizados, tus preferencias tendrán una base más amplia.
+                </p>
+              )}
+            </section>
+            <div className="two-columns">
+              <section className="panel">
+                <h2>Motivos de cancelación</h2>
+                <p className="muted">
+                  Según tus {cancelaciones.cantidad_respuestas} encuestas de cancelación
+                  respondidas.
+                </p>
+                {cancelaciones.motivos.length ? (
+                  <div className="bar-chart">
+                    {cancelaciones.motivos.map((item) => (
+                      <div className="bar-item" key={item.motivo_cancelacion}>
+                        <div className="row between">
+                          <span>{MOTIVOS[item.motivo_cancelacion] || item.motivo_cancelacion}</span>
+                          <strong>{item.cantidad}</strong>
+                        </div>
+                        <div className="bar-track">
+                          <span style={{ width: `${(item.cantidad / maximo) * 100}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    titulo="Todavía no hay respuestas"
+                    descripcion="Cuando respondas una encuesta de cancelación, verás aquí sus motivos."
+                    icono="survey"
+                  />
+                )}
+              </section>
+              <section className="panel">
+                <h2>Tus experiencias</h2>
+                <p className="muted">Lo que nos has contado después de jugar.</p>
+                <dl className="detail-list">
+                  <div>
+                    <dt>Encuestas respondidas</dt>
+                    <dd>{experiencias.cantidad_respuestas}</dd>
+                  </div>
+                  <div>
+                    <dt>Volverías a reservar</dt>
+                    <dd>{experiencias.volveria_reservar_si} respuestas afirmativas</dd>
+                  </div>
+                  <div>
+                    <dt>Última calificación</dt>
+                    <dd>
+                      {experiencias.ultima_respuesta
+                        ? `${experiencias.ultima_respuesta.calificacion} / 5`
+                        : 'Sin respuestas'}
+                    </dd>
+                  </div>
+                </dl>
+                <p className="small-text">
+                  Estas cifras son personales y corresponden al período seleccionado. Las
+                  cancelaciones realizadas y las encuestas respondidas son conteos diferentes.
+                </p>
+              </section>
+            </div>
+          </>
+        )}
+      </Carga>
+    </>
+  );
 }

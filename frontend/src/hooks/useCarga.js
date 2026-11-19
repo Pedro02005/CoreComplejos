@@ -9,12 +9,22 @@ export function useCarga(cargar, dependencias = []) {
 
   useEffect(() => {
     let activo = true;
-    setCargando(true); setError('');
-    Promise.resolve().then(cargar)
-      .then((resultado) => { if (activo) setDatos(resultado); })
-      .catch((err) => { if (activo) setError(err.message); })
-      .finally(() => { if (activo) setCargando(false); });
-    return () => { activo = false; };
+    setCargando(true);
+    setError('');
+    Promise.resolve()
+      .then(cargar)
+      .then((resultado) => {
+        if (activo) setDatos(resultado);
+      })
+      .catch((err) => {
+        if (activo) setError(err.message);
+      })
+      .finally(() => {
+        if (activo) setCargando(false);
+      });
+    return () => {
+      activo = false;
+    };
   }, [...dependencias, intento]);
 
   return { datos, cargando, error, recargar: () => setIntento((valor) => valor + 1) };

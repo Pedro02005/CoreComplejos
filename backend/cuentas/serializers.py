@@ -6,6 +6,7 @@ from django.db import IntegrityError, transaction
 from rest_framework import serializers
 
 from .models import Usuario
+from .permisos import es_admin_complejo, es_admin_plataforma
 
 
 def validar_usuario(usuario):
@@ -20,10 +21,16 @@ def validar_usuario(usuario):
 
 
 class PerfilSerializer(serializers.ModelSerializer):
+    es_administrador = serializers.SerializerMethodField()
+
     class Meta:
         model = Usuario
-        fields = ("id", "username", "first_name", "last_name", "email", "cedula", "telefono", "rol")
+        fields = ("id", "username", "first_name", "last_name", "email", "cedula", "telefono", "rol", "es_administrador")
         read_only_fields = ("id", "username", "rol")
+
+    def get_es_administrador(self, usuario):
+        # También identifica al superusuario técnico, aunque conserve el rol inicial CLIENTE.
+        return es_admin_plataforma(usuario) or es_admin_complejo(usuario)
 
     def validate_email(self, value):
         return value.strip().lower()
