@@ -1,5 +1,10 @@
 
 from django.contrib import admin
+from django.contrib import messages
+from django.core.exceptions import ValidationError, PermissionDenied
+from cuentas.admin_mixins import ComplejoRestringidoAdminMixin
+from .forms import CancelacionActionForm
+from .services.cancelacion import cancelar_reserva
 
 from .models import (
     Reserva,
@@ -79,7 +84,11 @@ class HistorialReservaInline(SoloLecturaInline):
 
 # Administración principal de reservas
 @admin.register(Reserva)
-class ReservaAdmin(admin.ModelAdmin):
+class ReservaAdmin(ComplejoRestringidoAdminMixin, admin.ModelAdmin):
+
+    campo_complejo = "cancha__complejo_id"
+    action_form = CancelacionActionForm
+    actions = ("cancelar_reservas",)
 
     list_display = (
         "id",
@@ -154,6 +163,24 @@ class ReservaAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+    @admin.action(description="Cancelar reservas seleccionadas", permissions=["view"])
+    def cancelar_reservas(self, request, queryset):
+        motivo = (request.POST.get("motivo") or "").strip()
+        if not motivo or len(motivo) > 500:
+            self.message_user(request, "Indica un motivo de entre 1 y 500 caracteres.", messages.ERROR)
+            return
+        canceladas = 0
+        for reserva in queryset:
+            try:
+                cancelar_reserva(reserva, request.user, motivo)
+            except (ValidationError, PermissionDenied) as error:
+                detalle = "; ".join(error.messages) if isinstance(error, ValidationError) else str(error)
+                self.message_user(request, f"Reserva {reserva.pk}: {detalle}", messages.ERROR)
+            else:
+                canceladas += 1
+        if canceladas:
+            self.message_user(request, f"Reservas canceladas: {canceladas}.", messages.SUCCESS)
+
 
 
 class RespuestaEncuestaInline(SoloLecturaInline):
@@ -178,7 +205,9 @@ class RespuestaEncuestaInline(SoloLecturaInline):
 
 
 @admin.register(Encuesta)
-class EncuestaAdmin(admin.ModelAdmin):
+class EncuestaAdmin(ComplejoRestringidoAdminMixin, admin.ModelAdmin):
+
+    campo_complejo = "reserva__cancha__complejo_id"
 
     list_display = (
         "id",

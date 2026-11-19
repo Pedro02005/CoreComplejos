@@ -1,6 +1,7 @@
 from django import forms
 
 from .models import Complejo, Cancha, Tarifa
+from cuentas.permisos import filtrar_por_complejo
 
 
 class TarifaAdminForm(forms.ModelForm):
@@ -15,7 +16,15 @@ class TarifaAdminForm(forms.ModelForm):
         fields = "__all__"
 
     def __init__(self, *args, **kwargs):
+        usuario = kwargs.pop("usuario", None)
         super().__init__(*args, **kwargs)
+
+        complejos = Complejo.objects.all()
+        canchas = Cancha.objects.all()
+        if usuario is not None:
+            complejos = filtrar_por_complejo(complejos, usuario, "pk")
+            canchas = filtrar_por_complejo(canchas, usuario, "complejo_id")
+        self.fields["complejo"].queryset = complejos
 
         # El usuario debe elegir primero un complejo.
         self.fields["cancha"].queryset = Cancha.objects.none()
@@ -29,7 +38,7 @@ class TarifaAdminForm(forms.ModelForm):
             complejo_id = None
 
         if complejo_id and str(complejo_id).isdigit():
-            self.fields["cancha"].queryset = Cancha.objects.filter(
+            self.fields["cancha"].queryset = canchas.filter(
                 complejo_id=complejo_id
             ).order_by("nombre")
 

@@ -21,6 +21,7 @@ from rest_framework.exceptions import (
 
 # Modelos
 from complejos.models import Cancha, HorarioAtencion
+from cuentas.permisos import reservas_visibles
 from .models import (
     Reserva,
     Encuesta,
@@ -211,10 +212,7 @@ class ConfirmarReservaView(APIView):
         )
 
         # 2. Filtrar según el usuario
-        if not request.user.is_superuser:
-            reservas = reservas.filter(
-                cliente=request.user
-            )
+        reservas = reservas_visibles(reservas, request.user)
 
         # 3. Convertir los objetos a JSON
         serializer = ReservaListadoSerializer(
@@ -290,11 +288,7 @@ class CancelarReservaView(APIView):
         # 2. Buscar la reserva
         reservas = Reserva.objects.all()
 
-        # Los clientes solo pueden acceder a sus reservas
-        if not request.user.is_superuser:
-            reservas = reservas.filter(
-                cliente=request.user
-            )
+        reservas = reservas_visibles(reservas, request.user)
 
         reserva = get_object_or_404(
             reservas,
@@ -344,10 +338,7 @@ class ReservaDetalleView(APIView):
         )
 
         # 2. Aplicar permisos
-        if not request.user.is_superuser:
-            reservas = reservas.filter(
-                cliente=request.user
-            )
+        reservas = reservas_visibles(reservas, request.user)
 
         # 3. Buscar la reserva solicitada
         reserva = get_object_or_404(

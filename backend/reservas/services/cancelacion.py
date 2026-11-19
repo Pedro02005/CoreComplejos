@@ -7,7 +7,8 @@ from django.core.exceptions import (
     PermissionDenied
 )
 
-from reservas.models import HistorialReserva
+from reservas.models import HistorialReserva, Reserva
+from cuentas.permisos import puede_administrar_complejo, reservas_visibles
 
 
 from .encuestas import generar_encuesta_cancelacion
@@ -17,18 +18,18 @@ from .encuestas import generar_encuesta_cancelacion
 def cancelar_reserva(reserva, actor, motivo=""):
 
     # 1. Verificar que el usuario esté autenticado
-    if not actor.is_authenticated:
+    if not actor.is_authenticated or not actor.is_active:
         raise PermissionDenied(
             "Debes iniciar sesión para cancelar."
         )
 
     # 2. Identificar si es un administrador
-    es_admin = actor.is_superuser
+    es_admin = puede_administrar_complejo(actor, reserva.cancha.complejo_id)
 
-    # 3. Verificar que el cliente sea dueño de la reserva
-    if not es_admin and reserva.cliente_id != actor.pk:
+    # 3. Comprobar la propiedad del cliente o el complejo del administrador.
+    if not reservas_visibles(Reserva.objects.all(), actor).filter(pk=reserva.pk).exists():
         raise PermissionDenied(
-            "No puedes cancelar reservas de otros usuarios."
+            "No tienes permiso para cancelar esta reserva."
         )
 
     # 4. Verificar el estado de la reserva

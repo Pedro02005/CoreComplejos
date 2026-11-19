@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "reservas",
 ]
 AUTH_USER_MODEL = "cuentas.Usuario"
+AUTHENTICATION_BACKENDS = ["cuentas.backends.RolesBackend"]
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
