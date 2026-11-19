@@ -1,5 +1,6 @@
 
 from django.urls import path
+from .views import MisEstadisticasView
 
 from .views import (
     DisponibilidadView,
@@ -20,6 +21,7 @@ from .views import (
 
 
 urlpatterns = [
+    path("estadisticas/", MisEstadisticasView.as_view(), name="mis-estadisticas"),
 
     # Consultar disponibilidad
     path(

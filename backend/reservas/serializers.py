@@ -12,6 +12,10 @@ from .models import (
 from .models import Reserva, DetallePrecio, HistorialReserva, Encuesta, RespuestaEncuesta
 
 
+class ConsultaEstadisticasSerializer(serializers.Serializer):
+    dias = serializers.IntegerField(min_value=1, max_value=365, default=90)
+
+
 class ConsultaDisponibilidadSerializer(serializers.Serializer):
 
     fecha = serializers.DateField()

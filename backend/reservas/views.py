@@ -22,6 +22,9 @@ from rest_framework.exceptions import (
 # Modelos
 from complejos.models import Cancha, HorarioAtencion
 from cuentas.permisos import reservas_visibles
+from .serializers import ConsultaEstadisticasSerializer
+from .services.estadisticas import obtener_estadisticas_encuestas
+from .services.historial_estadisticas import obtener_estadisticas_historial
 from .models import (
     Reserva,
     Encuesta,
@@ -69,6 +72,20 @@ from .services.asignacion_promociones import (
 
 
 ZONA = ZoneInfo("America/Guayaquil")
+
+
+class MisEstadisticasView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = ConsultaEstadisticasSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        dias = serializer.validated_data["dias"]
+        # Ambos servicios calculan únicamente los datos del usuario autenticado.
+        return Response({
+            "historial": obtener_estadisticas_historial(request.user, dias),
+            "encuestas": obtener_estadisticas_encuestas(request.user, dias),
+        })
 
 
 class DisponibilidadView(APIView):
